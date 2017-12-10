@@ -1,0 +1,6 @@
+.logInScreen {
+  padding: 1rem;
+  text-align: center; }
+  .logInScreen .auth_btn {
+    margin: 10px auto 0px auto;
+    display: block; }

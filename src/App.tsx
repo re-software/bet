@@ -1,28 +1,39 @@
 import * as React from 'react';
 import './App.css';
-import * as firebase from './firebase.js';
+import { Header } from "./Header/Header";
+import { BottomBar } from "./BottomBar/BottomBar";
+import { Auth } from "./Auth/Auth";
+import { Log } from "./Log/Log";
+
+import { base as firebase } from "./firebase";
+import { Graph } from './Graph/Graph';
+import { Results } from './Results/Results';
+
 interface IState {
 	currentItem: string;
 	username: string;
 	user: string;
 	items: any[];
 	isAuthorize: boolean;
+	currentView?: string;
+	weights?: any;
 }
 class App extends React.Component {
 	state: IState;
 	constructor(props: any) {
 		super(props);
+		const user = localStorage.getItem("bet_current_user") || "";
 		this.state = {
 			currentItem: '',
 			username: '',
-			user: 'user',
+			user,
 			items: [],
-			isAuthorize: false
+			isAuthorize: !!user,
 		}
 		this.handleChange = this.handleChange.bind(this);
 		this.handleSubmit = this.handleSubmit.bind(this);
 		this.onAuthorize = this.onAuthorize.bind(this);
-
+		this.getResults();
 	}
 	handleChange(e) {
 		this.setState({
@@ -40,7 +51,7 @@ class App extends React.Component {
 		}
 		itemsRef.push(item);
 
-		itemsRef.on('value', (snapshot) => {
+		itemsRef.on('value', (snapshot: any) => {
 			console.log(snapshot.val());
 		});
 
@@ -63,7 +74,7 @@ class App extends React.Component {
 		const user = this.state.user;
 		const itemsRef = firebase.database().ref(`users/${user}/weight`);
 		console.log("componentDidMoutn", user);
-		itemsRef.on('value', (snapshot) => {
+		itemsRef.on('value', (snapshot: any) => {
 			const items = snapshot.val();
 			const newState = [] as any;
 			console.log(items);
@@ -84,70 +95,85 @@ class App extends React.Component {
 		console.log("Update component");
 	}
 	onAuthorize(e) {
-		console.log("Authorize");
-		e.preventDefault();
 
-		const user = this.state.user;
+	}
+	login = (user: string) => {
+		console.log("user", user);
+		user = user.toLowerCase();
 		const itemsRef = firebase.database().ref(`users/${user}`);
 
-		itemsRef.on('value', (snapshot) => {
+		itemsRef.on('value', (snapshot: any) => {
 			console.log("user info", snapshot.val());
 
-			// this.render();
 			let val = false;
 			if (snapshot.val()) {
 				val = true;
+				localStorage.setItem("bet_current_user", user);
+			} else {
+				user = "";
+				localStorage.setItem("bet_current_user", "");
 			}
 			this.setState({
-				isAuthorize: val
+				isAuthorize: val,
+				user
 			});
 		});
+	}
+	getResults() {
+		const user = this.state.user;
+		const itemsRef = firebase.database().ref(`users/${user}/weight`);
 
-		// console.log(itemsRef);
-		// const w = itemsRef.w;
+		itemsRef.on('value', (snapshot: any) => {
+			console.log(snapshot.val());
+			const weights = snapshot.val() as any;
+			const w = [] as any;
+			for (const key in weights) {
+				w.push(weights[key]);
+			}
+			console.log(w);
+			this.setState({ weights: w });
+		});
+	}
+	getCurrentView() {
+		let current = this.state.currentView as any;
+		if (!this.state.isAuthorize) {
+			current = "auth";
+		} else {
+			current = current || "graph";
+		}
+		const data = this.state.weights;
+		const views = {
+			graph: (<Graph />),
+			results: (<Results data={data} />),
+			log: (<Log />),
+			auth: (<Auth onLogin={this.login} />)
+		}
+		return views[current];
+	}
+	handleViewChange = (val: string) => {
+		if (val === this.state.currentView) {
+			return;
+		}
+		console.log("need toggle views");
+		this.setState({ currentView: val });
+	}
+	handleLogOut = () => {
+		this.setState({ isAuthorize: false });
 	}
 	render() {
 		return (
 			<div className='app'>
-				<header>
-					<div className='wrapper'>
-						<h1>Fun Food Friends</h1>
-
-					</div>
-				</header>
+				<Header onLogOut={this.handleLogOut} isAuth={this.state.isAuthorize} />
 				<div className='container'>
-					<section className='add-item'>
-						<form onSubmit={this.handleSubmit}>
-							<input type="text" name="currentItem" placeholder="What are you bringing?" onChange={this.handleChange} value={this.state.currentItem} />
-							<button>Add Item</button>
-						</form>
-						<form onSubmit={this.onAuthorize}>
-							<input type="text" name="user" placeholder="Enter you name" onChange={this.handleChange} value={this.state.user} />
-							<button>Log in</button>
-						</form>
+					<section className="main_view">
+						{this.getCurrentView()}
 					</section>
-					{this.state.isAuthorize ? (
-						<section className='display-item'>
-							<div className="wrapper">
-								<ul>
-									{this.state.items.map((item) => {
-										return (
-											<li key={item.id}>
-												<h3>{item.title}</h3>
-												<p>Your weight: {item.user}</p>
-												<button onClick={() => this.removeItem(item.id)}>Remove Item</button>
-											</li>
-										)
-									})}
-								</ul>
-							</div>
-						</section>
-					)
-						: (
-							<div></div>
-						)}
-
 				</div>
+				{
+					this.state.isAuthorize ?
+						<BottomBar onChange={this.handleViewChange} />
+						: null
+				}
 			</div>
 		);
 	}

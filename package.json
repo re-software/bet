@@ -4,13 +4,16 @@
   "private": true,
   "homepage": "https://re-software.github.io/bet",
   "dependencies": {
+    "firebase": "^4.7.0",
     "gh-pages": "^1.1.0",
+    "material-ui": "^1.0.0-beta.23",
+    "material-ui-icons": "^1.0.0-beta.17",
     "node-sass-chokidar": "^0.0.3",
     "npm-run-all": "^4.1.2",
     "react": "^16.2.0",
     "react-dom": "^16.2.0",
     "react-scripts-ts": "2.8.0",
-    "firebase": "^4.7.0"
+    "recharts": "^1.0.0-beta.6"
   },
   "scripts": {
     "watch-css": "npm run build-css && node-sass-chokidar src/ -o src/ --watch --recursive",
@@ -25,7 +28,6 @@
     "deploy": "gh-pages -d build"
   },
   "devDependencies": {
-    "@types/firebase": "^2.4.32",
     "@types/jest": "^21.1.8",
     "@types/node": "^8.0.57",
     "@types/react": "^16.0.28",
