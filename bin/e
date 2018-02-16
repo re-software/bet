@@ -1,0 +1,8 @@
+#!/usr/bin/env node
+'use strict';
+require('./_e.js');
+
+// console.log("running");
+// var shell = require("shelljs");
+
+// shell.echo("Runned");
